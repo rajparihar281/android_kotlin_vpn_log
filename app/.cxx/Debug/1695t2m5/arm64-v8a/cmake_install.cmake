@@ -1,4 +1,4 @@
-# Install script for directory: C:/Users/prash/AndroidStudioProjects/android_kotlin_vpn_log/app/src/main/cpp
+# Install script for directory: D:/Raj_parihar/work/Internship tasks/kt_app/app/src/main/cpp
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -39,7 +39,7 @@ endif()
 
 # Set default install directory permissions.
 if(NOT DEFINED CMAKE_OBJDUMP)
-  set(CMAKE_OBJDUMP "C:/Users/prash/AppData/Local/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/windows-x86_64/bin/llvm-objdump.exe")
+  set(CMAKE_OBJDUMP "C:/Users/Raj Parihar/AppData/Local/Android/Sdk/ndk/27.0.12077973/toolchains/llvm/prebuilt/windows-x86_64/bin/llvm-objdump.exe")
 endif()
 
 if(CMAKE_INSTALL_COMPONENT)
@@ -50,5 +50,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "C:/Users/prash/AndroidStudioProjects/android_kotlin_vpn_log/app/.cxx/Debug/1695t2m5/arm64-v8a/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "D:/Raj_parihar/work/Internship tasks/kt_app/app/.cxx/Debug/1695t2m5/arm64-v8a/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")

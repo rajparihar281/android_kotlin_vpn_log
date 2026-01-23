@@ -37,6 +37,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.entry
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
@@ -48,6 +49,7 @@ import com.prashik.firewallapp.ui.MainViewModel
 import com.prashik.firewallapp.ui.components.Search_Text_Field
 import com.prashik.firewallapp.ui.screen.Blocked_Apps
 import com.prashik.firewallapp.ui.screen.Main_Screen
+import com.prashik.firewallapp.ui.screen.NetworkAppsScreen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -150,6 +152,7 @@ fun Nested_Graph(
                                 when (currentBottomBarScreen) {
                                     is BottomBarScreen.BlockedApps -> appIsSearching = true
                                     is BottomBarScreen.TrafficLogs -> logIsSearching = true
+                                    is BottomBarScreen.NetworkApps -> {}
                                 }
                             }
                         ) {
@@ -182,6 +185,8 @@ fun Nested_Graph(
                             onIsSearchingChange = { logIsSearching = it }
                         )
                     }
+                    
+                    is BottomBarScreen.NetworkApps -> {}
                 }
             }
         },
@@ -245,6 +250,16 @@ fun Nested_Graph(
                         switchState = switchState,
                         searchQuery = logSearchQuery,
                         firewallTrafficLogs = firewallTrafficLogs
+                    )
+                }
+                entry<BottomBarScreen.NetworkApps> {
+                    val appsWithAddresses = viewModel.appsWithAddresses.collectAsStateWithLifecycle()
+                    NetworkAppsScreen(
+                        apps = appsWithAddresses.value,
+                        onAppClick = { packageName, appName ->
+                            // Navigate to app addresses screen
+                            // This would need to be handled by the parent navigation
+                        }
                     )
                 }
             }

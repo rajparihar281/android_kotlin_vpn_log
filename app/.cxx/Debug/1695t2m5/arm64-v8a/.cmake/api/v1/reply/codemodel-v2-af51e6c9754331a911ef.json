@@ -39,7 +39,7 @@
 				{
 					"directoryIndex" : 0,
 					"id" : "firewallapp::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-firewallapp-Debug-ba1340c87d00c5253c58.json",
+					"jsonFile" : "target-firewallapp-Debug-84b449c498fa12bb4493.json",
 					"name" : "firewallapp",
 					"projectIndex" : 0
 				}
@@ -49,8 +49,8 @@
 	"kind" : "codemodel",
 	"paths" : 
 	{
-		"build" : "C:/Users/prash/AndroidStudioProjects/android_kotlin_vpn_log/app/.cxx/Debug/1695t2m5/arm64-v8a",
-		"source" : "C:/Users/prash/AndroidStudioProjects/android_kotlin_vpn_log/app/src/main/cpp"
+		"build" : "D:/Raj_parihar/work/Internship tasks/kt_app/app/.cxx/Debug/1695t2m5/arm64-v8a",
+		"source" : "D:/Raj_parihar/work/Internship tasks/kt_app/app/src/main/cpp"
 	},
 	"version" : 
 	{

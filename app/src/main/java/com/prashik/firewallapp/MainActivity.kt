@@ -12,12 +12,6 @@ import com.prashik.firewallapp.ui.theme.FirewallAppTheme
 
 
 class MainActivity : ComponentActivity() {
-    companion object {
-        init {
-            System.loadLibrary("firewallapp")
-        }
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge(
@@ -30,5 +24,5 @@ class MainActivity : ComponentActivity() {
                 AppNavigation()
             }
         }
-    }
-}
+    }   
+}   

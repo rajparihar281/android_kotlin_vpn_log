@@ -2,8 +2,10 @@ package com.prashik.firewallapp.ui.bottomBar
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AppBlocking
+import androidx.compose.material.icons.filled.NetworkCheck
 import androidx.compose.material.icons.filled.Widgets
 import androidx.compose.material.icons.outlined.AppBlocking
+import androidx.compose.material.icons.outlined.NetworkCheck
 import androidx.compose.material.icons.outlined.Widgets
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -13,7 +15,8 @@ import kotlinx.serialization.Serializable
 
 val bottomBarList = listOf<BottomBarScreen>(
     BottomBarScreen.BlockedApps,
-    BottomBarScreen.TrafficLogs
+    BottomBarScreen.TrafficLogs,
+    BottomBarScreen.NetworkApps
 )
 
 @Serializable
@@ -36,6 +39,13 @@ sealed class BottomBarScreen(
         unSelectedIcon = Icons.Outlined.AppBlocking,
         title = "Traffic Logs"
     )
+
+    @Serializable
+    data object NetworkApps : BottomBarScreen(
+        selectedIcon = Icons.Default.NetworkCheck,
+        unSelectedIcon = Icons.Outlined.NetworkCheck,
+        title = "Network Apps"
+    )
 }
 
 val BottomBarSaver = Saver<BottomBarScreen, String>(
@@ -44,6 +54,7 @@ val BottomBarSaver = Saver<BottomBarScreen, String>(
         when (it) {
             BottomBarScreen.BlockedApps::class.simpleName -> BottomBarScreen.BlockedApps
             BottomBarScreen.TrafficLogs::class.simpleName -> BottomBarScreen.TrafficLogs
+            BottomBarScreen.NetworkApps::class.simpleName -> BottomBarScreen.NetworkApps
             else -> BottomBarScreen.BlockedApps
         }
     }

@@ -3,6 +3,7 @@ package com.prashik.firewallapp.di
 import android.app.Application
 import androidx.room.Room
 import com.prashik.firewallapp.data.local.dao.BlockLogDao
+import com.prashik.firewallapp.data.local.dao.AppAddressDao
 import com.prashik.firewallapp.data.local.database.BlockLogDatabase
 import org.koin.core.annotation.Module
 import org.koin.core.annotation.Single
@@ -22,5 +23,10 @@ class RoomModule {
     @Single
     fun provideDao(blockLogDatabase: BlockLogDatabase): BlockLogDao {
         return blockLogDatabase.getBlockLogDao()
+    }
+
+    @Single
+    fun provideAppAddressDao(blockLogDatabase: BlockLogDatabase): AppAddressDao {
+        return blockLogDatabase.getAppAddressDao()
     }
 }

@@ -11,4 +11,10 @@ sealed class Screen: NavKey {
 
     @Serializable
     data object NestedGraph: Screen()
+
+    @Serializable
+    data object NetworkApps: Screen()
+
+    @Serializable
+    data class AppAddresses(val packageName: String, val appName: String): Screen()
 }

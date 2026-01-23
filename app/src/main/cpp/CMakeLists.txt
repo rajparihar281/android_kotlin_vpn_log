@@ -68,4 +68,5 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
         ${android-lib}
         ${log-lib}
         ${z-lib}
+        c++_shared
 )
