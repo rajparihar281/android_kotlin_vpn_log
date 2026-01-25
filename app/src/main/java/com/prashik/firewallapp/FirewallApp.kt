@@ -9,6 +9,12 @@ import org.koin.ksp.generated.defaultModule
 import org.koin.ksp.generated.module
 
 class FirewallApp: Application() {
+    companion object {
+        init {
+            System.loadLibrary("firewallapp")
+        }
+    }
+    
     override fun onCreate() {
         super.onCreate()
         startKoin {

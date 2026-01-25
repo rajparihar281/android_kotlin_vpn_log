@@ -12,6 +12,13 @@
 #include "include/pcapplusplus/PayloadLayer.h"
 #include "include/pcapplusplus/EthLayer.h"
 
+#define TCP_FIN 0x01
+#define TCP_SYN 0x02
+#define TCP_RST 0x04
+#define TCP_PSH 0x08
+#define TCP_ACK 0x10
+#define TCP_URG 0x20
+
 extern "C"
 JNIEXPORT jstring JNICALL
 Java_com_prashik_firewallapp_NativeBridge_parseRealPacket(
@@ -203,21 +210,20 @@ Java_com_prashik_firewallapp_NativeBridge_buildUdpResponsePacket(
         jint dst_port
 ) {
     const char* srcIp = env->GetStringUTFChars(src_ip, nullptr);
-    const char* dstIp = env->GetStringUTFChars(src_ip, nullptr);
+    const char* dstIp = env->GetStringUTFChars(dst_ip, nullptr);
 
     jbyte* payloadBytes = env->GetByteArrayElements(payload, nullptr);
     jsize payloadLen = env->GetArrayLength(payload);
 
-    // Build IP + UDP + Payload
     pcpp::IPv4Address ipSrc(srcIp);
     pcpp::IPv4Address ipDst(dstIp);
 
     pcpp::IPv4Layer ipLayer(ipSrc, ipDst);
     ipLayer.getIPv4Header()->timeToLive = 64;
+    ipLayer.getIPv4Header()->protocol = pcpp::PACKETPP_IPPROTO_UDP;
 
     pcpp::UdpLayer udpLayer(src_port, dst_port);
     pcpp::PayloadLayer payloadLayer(reinterpret_cast<const uint8_t*>(payloadBytes), static_cast<size_t>(payloadLen));
-
 
     pcpp::Packet packet(100);
     packet.addLayer(&ipLayer);
@@ -225,14 +231,12 @@ Java_com_prashik_firewallapp_NativeBridge_buildUdpResponsePacket(
     packet.addLayer(&payloadLayer);
     packet.computeCalculateFields();
 
-    // Final packet as byte array
     int totalLen = packet.getRawPacket()->getRawDataLen();
     const uint8_t* rawData = packet.getRawPacket()->getRawData();
 
     jbyteArray result = env->NewByteArray(totalLen);
     env->SetByteArrayRegion(result, 0, totalLen, (const jbyte*)rawData);
 
-    // Clean up
     env->ReleaseStringUTFChars(src_ip, srcIp);
     env->ReleaseStringUTFChars(dst_ip, dstIp);
     env->ReleaseByteArrayElements(payload, payloadBytes, JNI_ABORT);
@@ -289,54 +293,145 @@ Java_com_prashik_firewallapp_NativeBridge_buildTcpResponsePacket(
         jstring dst_ip,
         jint dst_port
 ) {
-    // Extract input parameters
     const char *srcIpStr = env->GetStringUTFChars(src_ip, nullptr);
     const char *dstIpStr = env->GetStringUTFChars(dst_ip, nullptr);
     jbyte *payloadData = env->GetByteArrayElements(payload, nullptr);
     jsize payloadLen = env->GetArrayLength(payload);
 
-    // Create IP/TCP layers
     pcpp::IPv4Address srcIp(srcIpStr);
     pcpp::IPv4Address dstIp(dstIpStr);
 
-    pcpp::EthLayer ethLayer(
-            pcpp::MacAddress("aa:aa:aa:aa:aa:aa"),
-            pcpp::MacAddress("bb:bb:bb:bb:bb:bb"),
-            PCPP_ETHERTYPE_IP
-    );
-
     pcpp::IPv4Layer ipLayer(srcIp, dstIp);
     ipLayer.getIPv4Header()->protocol = pcpp::PACKETPP_IPPROTO_TCP;
+    ipLayer.getIPv4Header()->timeToLive = 64;
 
     pcpp::TcpLayer tcpLayer(src_port, dst_port);
     tcpLayer.getTcpHeader()->ackFlag = 1;
     tcpLayer.getTcpHeader()->pshFlag = 1;
-    tcpLayer.getTcpHeader()->ackNumber = htonl(1);  // adjust if needed
-    tcpLayer.getTcpHeader()->sequenceNumber = htonl(1); // adjust if needed
+    tcpLayer.getTcpHeader()->ackNumber = htonl(1);
+    tcpLayer.getTcpHeader()->sequenceNumber = htonl(1);
 
     pcpp::PayloadLayer payloadLayer(
             reinterpret_cast<uint8_t *>(payloadData),
             payloadLen
     );
 
-    // Build the full packet
-    pcpp::Packet responsePacket(1);
-    responsePacket.addLayer(&ethLayer);
+    pcpp::Packet responsePacket(100);
     responsePacket.addLayer(&ipLayer);
     responsePacket.addLayer(&tcpLayer);
     responsePacket.addLayer(&payloadLayer);
 
     responsePacket.computeCalculateFields();
 
-    // Convert to byte array for Java
     int totalLen = responsePacket.getRawPacket()->getRawDataLen();
     const uint8_t *rawData = responsePacket.getRawPacket()->getRawData();
 
     jbyteArray result = env->NewByteArray(totalLen);
     env->SetByteArrayRegion(result, 0, totalLen, reinterpret_cast<const jbyte *>(rawData));
 
-    // Cleanup
     env->ReleaseByteArrayElements(payload, payloadData, JNI_ABORT);
+    env->ReleaseStringUTFChars(src_ip, srcIpStr);
+    env->ReleaseStringUTFChars(dst_ip, dstIpStr);
+
+    return result;
+}
+
+extern "C"
+JNIEXPORT jint JNICALL
+Java_com_prashik_firewallapp_NativeBridge_getTcpFlags(
+        JNIEnv *env,
+        jobject thiz,
+        jbyteArray packetData,
+        jint length
+) {
+    jbyte* rawBytes = env->GetByteArrayElements(packetData, nullptr);
+    if (rawBytes == nullptr) return 0;
+
+    timeval time{};
+    gettimeofday(&time, nullptr);
+
+    pcpp::RawPacket rawPacket(reinterpret_cast<const uint8_t*>(rawBytes), length, time, false, pcpp::LINKTYPE_RAW);
+    pcpp::Packet parsedPacket(&rawPacket);
+
+    env->ReleaseByteArrayElements(packetData, rawBytes, JNI_ABORT);
+
+    auto tcpLayer = parsedPacket.getLayerOfType<pcpp::TcpLayer>();
+    if (tcpLayer == nullptr) return 0;
+
+    pcpp::tcphdr* tcpHeader = tcpLayer->getTcpHeader();
+    int flags = 0;
+    if (tcpHeader->finFlag) flags |= TCP_FIN;
+    if (tcpHeader->synFlag) flags |= TCP_SYN;
+    if (tcpHeader->rstFlag) flags |= TCP_RST;
+    if (tcpHeader->pshFlag) flags |= TCP_PSH;
+    if (tcpHeader->ackFlag) flags |= TCP_ACK;
+    if (tcpHeader->urgFlag) flags |= TCP_URG;
+
+    return flags;
+}
+
+extern "C"
+JNIEXPORT jbyteArray JNICALL
+Java_com_prashik_firewallapp_NativeBridge_buildTcpPacket(
+        JNIEnv *env,
+        jobject thiz,
+        jstring src_ip,
+        jstring dst_ip,
+        jint src_port,
+        jint dst_port,
+        jint flags,
+        jlong seq_num,
+        jlong ack_num,
+        jbyteArray payload
+) {
+    const char *srcIpStr = env->GetStringUTFChars(src_ip, nullptr);
+    const char *dstIpStr = env->GetStringUTFChars(dst_ip, nullptr);
+
+    pcpp::IPv4Address srcIp(srcIpStr);
+    pcpp::IPv4Address dstIp(dstIpStr);
+
+    pcpp::IPv4Layer ipLayer(srcIp, dstIp);
+    ipLayer.getIPv4Header()->protocol = pcpp::PACKETPP_IPPROTO_TCP;
+    ipLayer.getIPv4Header()->timeToLive = 64;
+
+    pcpp::TcpLayer tcpLayer(src_port, dst_port);
+    pcpp::tcphdr* tcpHeader = tcpLayer.getTcpHeader();
+    
+    tcpHeader->finFlag = (flags & TCP_FIN) ? 1 : 0;
+    tcpHeader->synFlag = (flags & TCP_SYN) ? 1 : 0;
+    tcpHeader->rstFlag = (flags & TCP_RST) ? 1 : 0;
+    tcpHeader->pshFlag = (flags & TCP_PSH) ? 1 : 0;
+    tcpHeader->ackFlag = (flags & TCP_ACK) ? 1 : 0;
+    tcpHeader->urgFlag = (flags & TCP_URG) ? 1 : 0;
+    
+    tcpHeader->sequenceNumber = htonl(seq_num);
+    tcpHeader->ackNumber = htonl(ack_num);
+    tcpHeader->windowSize = htons(65535);
+
+    pcpp::Packet packet(100);
+    packet.addLayer(&ipLayer);
+    packet.addLayer(&tcpLayer);
+
+    if (payload != nullptr) {
+        jbyte *payloadData = env->GetByteArrayElements(payload, nullptr);
+        jsize payloadLen = env->GetArrayLength(payload);
+        
+        if (payloadLen > 0) {
+            pcpp::PayloadLayer payloadLayer(reinterpret_cast<uint8_t *>(payloadData), payloadLen);
+            packet.addLayer(&payloadLayer);
+        }
+        
+        env->ReleaseByteArrayElements(payload, payloadData, JNI_ABORT);
+    }
+
+    packet.computeCalculateFields();
+
+    int totalLen = packet.getRawPacket()->getRawDataLen();
+    const uint8_t *rawData = packet.getRawPacket()->getRawData();
+
+    jbyteArray result = env->NewByteArray(totalLen);
+    env->SetByteArrayRegion(result, 0, totalLen, reinterpret_cast<const jbyte *>(rawData));
+
     env->ReleaseStringUTFChars(src_ip, srcIpStr);
     env->ReleaseStringUTFChars(dst_ip, dstIpStr);
 

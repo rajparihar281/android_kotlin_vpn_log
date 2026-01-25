@@ -10,6 +10,8 @@ import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import com.prashik.firewallapp.ui.MainViewModel
 import com.prashik.firewallapp.ui.screen.Select_Apps
+import com.prashik.firewallapp.ui.screen.NetworkAppsScreen
+import com.prashik.firewallapp.ui.screen.AppAddressScreen
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
@@ -23,6 +25,7 @@ fun AppNavigation(
     val switchState = viewModel.switchState.collectAsStateWithLifecycle()
     LaunchedEffect(switchState.value) {
         viewModel.getBlockLogs()
+        viewModel.loadAppsWithAddresses()
     }
     val firewallTrafficLogs = viewModel.allBlackLogs.collectAsStateWithLifecycle()
 
@@ -37,6 +40,38 @@ fun AppNavigation(
                         newBackStack.removeLastOrNull()
                     },
                     viewModel = viewModel
+                )
+            }
+            entry<Screen.NetworkApps> {
+                val appsWithAddresses = viewModel.appsWithAddresses.collectAsStateWithLifecycle()
+                NetworkAppsScreen(
+                    apps = appsWithAddresses.value,
+                    onAppClick = { packageName, appName ->
+                        newBackStack.add(Screen.AppAddresses(packageName, appName))
+                    }
+                )
+            }
+            entry<Screen.AppAddresses> { entry ->
+                val addresses = viewModel.currentAppAddresses.collectAsStateWithLifecycle()
+                LaunchedEffect(entry.packageName) {
+                    viewModel.loadAddressesForApp(entry.packageName)
+                }
+                AppAddressScreen(
+                    appName = entry.appName,
+                    packageName = entry.packageName,
+                    addresses = addresses.value,
+                    onBackClick = {
+                        newBackStack.removeLastOrNull()
+                    },
+                    onToggleAddress = { addressId, isBlocked ->
+                        viewModel.toggleAddressBlock(addressId, isBlocked)
+                    },
+                    onBlockAll = {
+                        viewModel.blockAllAddressesForApp(entry.packageName)
+                    },
+                    onAllowAll = {
+                        viewModel.allowAllAddressesForApp(entry.packageName)
+                    }
                 )
             }
             entry<Screen.NestedGraph> {

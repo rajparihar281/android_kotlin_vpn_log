@@ -79,4 +79,14 @@ object UidResolver {
             null
         }
     }
+
+    fun getPackageNameFromUid(context: Context, uid: Int): String? {
+        return try {
+            val pm = context.packageManager
+            val packageNames = pm.getPackagesForUid(uid)
+            packageNames?.firstOrNull()
+        } catch (_: Exception) {
+            null
+        }
+    }
 }
